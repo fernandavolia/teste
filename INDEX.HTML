@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorteador de Decisões</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            box-sizing: border-box;
+        }
+        
+        .spin-animation {
+            animation: spin 2s ease-in-out;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.1); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .option-card {
+            transition: all 0.2s ease;
+        }
+
+        .option-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(147, 51, 234, 0.15);
+        }
+    </style>
+</head>
+<body class="min-h-full bg-purple-50">
+    <main class="container mx-auto px-4 py-8 min-h-full flex flex-col">
+        <!-- Header elegante -->
+        <header class="text-center mb-12">
+            <div class="inline-block bg-white rounded-full p-6 shadow-lg mb-6">
+                <div class="text-6xl">🎲</div>
+            </div>
+            <h1 class="text-5xl font-bold text-purple-800 mb-4">Sorteador Mágico</h1>
+            <p class="text-xl text-purple-600 font-medium">Deixe a sorte decidir por você</p>
+        </header>
+
+        <div class="flex-1 max-w-4xl mx-auto w-full">
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Painel de Opções -->
+                <section class="bg-white rounded-3xl shadow-xl p-8 border border-purple-100">
+                    <div class="flex items-center mb-6">
+                        <div class="bg-purple-100 rounded-full p-3 mr-4">
+                            <span class="text-2xl">📝</span>
+                        </div>
+                        <h2 class="text-2xl font-bold text-purple-800">Suas Opções</h2>
+                    </div>
+                    
+                    <form id="optionForm" class="mb-6">
+                        <div class="space-y-3">
+                            <label for="optionInput" class="block text-purple-700 font-semibold">Adicionar nova opção:</label>
+                            <div class="flex gap-3">
+                                <input 
+                                    type="text" 
+                                    id="optionInput"
+                                    placeholder="Digite sua opção aqui..."
+                                    class="flex-1 px-4 py-3 border-2 border-purple-200 rounded-xl focus:border-purple-500 focus:outline-none text-lg transition-colors"
+                                    maxlength="50"
+                                >
+                                <button 
+                                    type="submit"
+                                    class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+                                >
+                                    ➕
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div id="optionsList" class="space-y-3 mb-6 max-h-64 overflow-y-auto">
+                        <div class="option-card bg-purple-50 border border-purple-200 px-4 py-3 rounded-xl flex items-center justify-between">
+                            <span class="text-purple-800 font-medium">Sim</span>
+                            <button onclick="removeOption(0)" class="text-pink-500 hover:text-pink-700 font-bold text-xl transition-colors">×</button>
+                        </div>
+                        <div class="option-card bg-purple-50 border border-purple-200 px-4 py-3 rounded-xl flex items-center justify-between">
+                            <span class="text-purple-800 font-medium">Não</span>
+                            <button onclick="removeOption(1)" class="text-pink-500 hover:text-pink-700 font-bold text-xl transition-colors">×</button>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button 
+                            onclick="clearAllOptions()"
+                            class="flex-1 bg-pink-100 hover:bg-pink-200 text-pink-700 px-4 py-3 rounded-xl font-semibold transition-colors duration-200 border border-pink-200"
+                        >
+                            🗑️ Limpar
+                        </button>
+                        <button 
+                            onclick="addQuickOptions()"
+                            class="flex-1 bg-purple-100 hover:bg-purple-200 text-purple-700 px-4 py-3 rounded-xl font-semibold transition-colors duration-200 border border-purple-200"
+                        >
+                            ⚡ Rápidas
+                        </button>
+                    </div>
+
+                    <div id="optionsCount" class="mt-4 text-center text-purple-600 font-medium">
+                        2 opções disponíveis
+                    </div>
+                </section>
+
+                <!-- Painel do Sorteio -->
+                <section class="bg-white rounded-3xl shadow-xl p-8 border border-purple-100">
+                    <div class="flex items-center mb-6">
+                        <div class="bg-pink-100 rounded-full p-3 mr-4">
+                            <span class="text-2xl">🎯</span>
+                        </div>
+                        <h2 class="text-2xl font-bold text-purple-800">Resultado</h2>
+                    </div>
+                    
+                    <div id="resultArea" class="mb-8 min-h-[200px] flex items-center justify-center bg-purple-50 rounded-2xl border-2 border-dashed border-purple-200">
+                        <div class="text-center">
+                            <div class="text-4xl mb-3">🎲</div>
+                            <div class="text-purple-600 text-lg font-medium">
+                                Pronto para sortear?
+                            </div>
+                        </div>
+                    </div>
+
+                    <button 
+                        id="drawButton"
+                        onclick="drawOption()"
+                        class="w-full bg-pink-500 hover:bg-pink-600 text-white px-8 py-4 rounded-2xl font-bold text-xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                    >
+                        ✨ SORTEAR AGORA ✨
+                    </button>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let options = ['Sim', 'Não'];
+
+        function updateOptionsDisplay() {
+            const optionsList = document.getElementById('optionsList');
+            const optionsCount = document.getElementById('optionsCount');
+            
+            optionsList.innerHTML = '';
+            
+            options.forEach((option, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option-card bg-purple-50 border border-purple-200 px-4 py-3 rounded-xl flex items-center justify-between fade-in';
+                optionDiv.innerHTML = `
+                    <span class="text-purple-800 font-medium">${option}</span>
+                    <button onclick="removeOption(${index})" class="text-pink-500 hover:text-pink-700 font-bold text-xl transition-colors">×</button>
+                `;
+                optionsList.appendChild(optionDiv);
+            });
+
+            optionsCount.textContent = `${options.length} opção${options.length !== 1 ? 'ões' : ''} disponível${options.length !== 1 ? 'eis' : ''}`;
+            
+            const drawButton = document.getElementById('drawButton');
+            if (options.length === 0) {
+                drawButton.disabled = true;
+                drawButton.className = 'w-full bg-gray-300 text-gray-500 px-8 py-4 rounded-2xl font-bold text-xl cursor-not-allowed';
+            } else {
+                drawButton.disabled = false;
+                drawButton.className = 'w-full bg-pink-500 hover:bg-pink-600 text-white px-8 py-4 rounded-2xl font-bold text-xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl';
+            }
+        }
+
+        function addOption(optionText) {
+            if (optionText.trim() && !options.includes(optionText.trim())) {
+                options.push(optionText.trim());
+                updateOptionsDisplay();
+                return true;
+            }
+            return false;
+        }
+
+        function removeOption(index) {
+            options.splice(index, 1);
+            updateOptionsDisplay();
+        }
+
+        function clearAllOptions() {
+            options = [];
+            updateOptionsDisplay();
+            document.getElementById('resultArea').innerHTML = `
+                <div class="text-center">
+                    <div class="text-4xl mb-3">📝</div>
+                    <div class="text-purple-600 text-lg font-medium">
+                        Adicione opções para começar
+                    </div>
+                </div>
+            `;
+        }
+
+        function addQuickOptions() {
+            const quickSets = [
+                ['Sim', 'Não', 'Talvez'],
+                ['Pizza', 'Hambúrguer', 'Sushi', 'Salada'],
+                ['Filme', 'Série', 'Livro', 'Jogo'],
+                ['Casa', 'Cinema', 'Parque', 'Shopping'],
+                ['Café', 'Chá', 'Suco', 'Água']
+            ];
+            
+            const randomSet = quickSets[Math.floor(Math.random() * quickSets.length)];
+            options = [...randomSet];
+            updateOptionsDisplay();
+        }
+
+        function drawOption() {
+            if (options.length === 0) return;
+
+            const resultArea = document.getElementById('resultArea');
+            const drawButton = document.getElementById('drawButton');
+            
+            // Animação de carregamento
+            drawButton.disabled = true;
+            drawButton.textContent = 'SORTEANDO...';
+            resultArea.innerHTML = `
+                <div class="text-center">
+                    <div class="text-6xl spin-animation mb-4">🎲</div>
+                    <div class="text-purple-600 text-lg font-medium">Sorteando...</div>
+                </div>
+            `;
+            
+            setTimeout(() => {
+                const randomIndex = Math.floor(Math.random() * options.length);
+                const selectedOption = options[randomIndex];
+                
+                resultArea.innerHTML = `
+                    <div class="text-center fade-in">
+                        <div class="bg-pink-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+                            <span class="text-4xl">🎉</span>
+                        </div>
+                        <div class="text-3xl font-bold text-pink-600 mb-2">${selectedOption}</div>
+                        <div class="text-purple-600 font-medium">Esta foi a opção sorteada!</div>
+                    </div>
+                `;
+                
+                drawButton.disabled = false;
+                drawButton.textContent = '✨ SORTEAR NOVAMENTE ✨';
+            }, 2000);
+        }
+
+        // Event listener para o formulário
+        document.getElementById('optionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const input = document.getElementById('optionInput');
+            const optionText = input.value.trim();
+            
+            if (optionText) {
+                if (addOption(optionText)) {
+                    input.value = '';
+                } else {
+                    // Feedback visual inline em vez de alert
+                    input.style.borderColor = '#ec4899';
+                    input.placeholder = 'Esta opção já existe!';
+                    setTimeout(() => {
+                        input.style.borderColor = '';
+                        input.placeholder = 'Digite sua opção aqui...';
+                    }, 2000);
+                }
+            }
+        });
+
+        // Inicializar a exibição
+        updateOptionsDisplay();
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'99392affb3b89ca0',t:'MTc2MTMwNTY5Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
